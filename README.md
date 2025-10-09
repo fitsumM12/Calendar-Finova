@@ -26,7 +26,7 @@
 ## 📦 Installation
 
 ```bash
-npm i ethiopian-calendar-xplat
+npm i ethiopian-calendar-fitsum
 ```
 
 ---
