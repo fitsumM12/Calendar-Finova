@@ -1,5 +1,3 @@
-// cspell:ignore Pagume
-
 /**
  * Represents a date in the Ethiopian calendar.
  */
@@ -13,14 +11,14 @@ export type EthiopicDate = {
   /** Ethiopian day (1–30; Pagume has 1–5 or 1–6) */
   day: number;
 
-  /** Optional time: hour (0–23) */
-  hour?: number;
+  /** Hour (0–23) */
+  hour: number;
 
-  /** Optional time: minute (0–59) */
-  minute?: number;
+  /** Minute (0–59) */
+  minute: number;
 
-  /** Optional time: second (0–59) */
-  second?: number;
+  /** Second (0–59) */
+  second: number;
 };
 
 /**
@@ -40,4 +38,38 @@ export interface FormatOptions {
 
   /** Weekday name style. */
   weekday?: "short" | "long" | "narrow";
+
+  /** Include time in formatting (default: false) */
+  includeTime?: boolean;
+
+  /** Time format style (12h or 24h) */
+  timeFormat?: "12h" | "24h";
+}
+
+/**
+ * Ethiopian Date-Time Picker Options
+ */
+export interface EthiopianDateTimePickerOptions {
+  locale?: Locale;
+  minDate?: Date;
+  maxDate?: Date;
+  showGregorian?: boolean;
+  showTime?: boolean;
+  timeFormat?: "12h" | "24h";
+  autoClose?: boolean;
+  defaultTime?: {
+    hour: number;
+    minute: number;
+    second: number;
+  };
+}
+
+/**
+ * Ethiopian Date-Time Picker Instance
+ */
+export interface EthiopianDateTimePickerInstance {
+  setDateTime: (date: Date | EthiopicDate) => void;
+  getDateTime: () => EthiopicDate;
+  getGregorianDateTime: () => Date;
+  destroy: () => void;
 }
