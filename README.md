@@ -45,7 +45,6 @@ npm i ethiopian-calendar-xplat
 - Zero external dependencies  
 
 
-
 ---
 
 ## 📜 License
