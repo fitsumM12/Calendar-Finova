@@ -1,5 +1,22 @@
 import { EthiopicDate, FormatOptions } from "./types";
 import { monthNames, weekdayNames } from "./i18n";
+import { ethiopicToGregorian } from "./convert";
+
+/**
+ * Calculate the correct Ethiopian weekday (0-6 where 0=Monday, 6=Sunday)
+ */
+function calculateEthiopianWeekday(date: EthiopicDate): number {
+  // Convert Ethiopian date to Gregorian to get the actual day of week
+  const gregorianDate = ethiopicToGregorian(date);
+  
+  // Get Gregorian weekday (0=Sunday, 1=Monday, ..., 6=Saturday)
+  const gregWeekday = gregorianDate.getDay();
+  
+  // Map to Ethiopian weekday system where Monday is the first day
+  // Gregorian: Sun=0, Mon=1, Tue=2, Wed=3, Thu=4, Fri=5, Sat=6
+  // Ethiopian: Mon=0, Tue=1, Wed=2, Thu=3, Fri=4, Sat=5, Sun=6
+  return (gregWeekday + 6) % 7;
+}
 
 /**
  * Format an Ethiopian date to a readable string.
@@ -9,18 +26,21 @@ export function format(date: EthiopicDate, opts: FormatOptions = {}): string {
   const months = monthNames[locale];
   const weekdays = weekdayNames[locale];
 
-  // Rough weekday calculation
-  const jdn =
-    (date.year - 1) * 365 +
-    Math.floor(date.year / 4) +
-    (date.month - 1) * 30 +
-    date.day;
-  const weekday = weekdays.long[jdn % 7];
+  // Use correct weekday calculation instead of broken JDN
+  const weekdayIndex = calculateEthiopianWeekday(date);
+  const weekday = weekdays.long[weekdayIndex];
 
   const dd = date.day.toString().padStart(2, "0");
-  const hh = (date.hour ?? 0).toString().padStart(2, "0");
-  const mm = (date.minute ?? 0).toString().padStart(2, "0");
-  const ss = (date.second ?? 0).toString().padStart(2, "0");
+  const monthName = months[date.month - 1];
 
-  return `${weekday}, ${dd} ${months[date.month - 1]} ${date.year} EC ${hh}:${mm}:${ss}`;
+  // Always include time to maintain backward compatibility with tests
+  const hours = date.hour ?? 0;
+  const minutes = date.minute ?? 0;
+  const seconds = date.second ?? 0;
+
+  const hh = hours.toString().padStart(2, "0");
+  const mm = minutes.toString().padStart(2, "0");
+  const ss = seconds.toString().padStart(2, "0");
+
+  return `${weekday}, ${dd} ${monthName} ${date.year} EC ${hh}:${mm}:${ss}`;
 }
