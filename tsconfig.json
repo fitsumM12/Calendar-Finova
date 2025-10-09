@@ -8,10 +8,11 @@
     "strict": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true,
     "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
     "lib": ["ES2020", "DOM"],
     "types": ["vitest"]
   },
-  "include": ["src", "test"]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "test"]
 }
