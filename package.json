@@ -1,7 +1,7 @@
 {
   "name": "ethiopian-calendar-xplat",
   "version": "1.0.3",
-  "description": "Cross-platform Ethiopian (Ethiopic) calendar conversion and formatting with i18n (Amharic, Afaan Oromo, Somali).",
+  "description": "Cross-platform Ethiopian (Ethiopic) calendar conversion and formatting with i18n support (Amharic, Afaan Oromo, Somali).",
   "type": "module",
   "main": "dist/index.cjs",
   "module": "dist/index.mjs",
@@ -22,7 +22,7 @@
     "dev": "tsup src/index.ts --watch --format esm,cjs --dts",
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "eslint .",
+    "lint": "eslint . --ext .ts",
     "prepare": "npm run build",
     "prepublishOnly": "npm test && npm run build"
   },
@@ -35,15 +35,23 @@
     "amharic",
     "oromo",
     "somali",
-    "conversion"
+    "conversion",
+    "typescript"
   ],
-  "author": "Your Name",
+  "author": "Fitsum Mesfin Dejene",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fitsumm12/ethiopian-calendar-xplat.git"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "devDependencies": {
     "@types/node": "^22.0.0",
     "eslint": "^9.0.0",
-    "typescript": "^5.5.0",
     "tsup": "^8.0.0",
-    "vitest": "^2.0.0"
+    "typescript": "^5.5.0",
+    "vitest": "^2.1.9"
   }
 }
