@@ -1,33 +1,50 @@
-export const isGregorianLeap = (year: number) => {
-  // Gregorian rule
+/**
+ * Check if a Gregorian year is a leap year.
+ */
+export const isGregorianLeap = (year: number): boolean => {
   return (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
 };
 
-/** Ethiopian year with 6th Pagume occurs when the ensuing Gregorian year is leap */
-export const isEthiopianLeap = (ethiopianYear: number) => {
-  const gyStart = ethiopianYear + 7; // EC year y starts in Gregorian year y+7
-  return isGregorianLeap(gyStart + 1);
+/**
+ * Check if an Ethiopian year is a leap year.
+ * Ethiopian year y is leap if the following Gregorian year (y + 8) is leap.
+ */
+export const isEthiopianLeap = (ethiopianYear: number): boolean => {
+  const gregorianYearStart = ethiopianYear + 7;
+  return isGregorianLeap(gregorianYearStart + 1);
 };
 
 /**
- * Gregorian date of Ethiopian New Year (Meskerem 1) for EC year y
- * In 1900–2099 range, it's Sept 11, except Sept 12 if the following Gregorian year is leap.
+ * Gregorian date of Meskerem 1 (Ethiopian New Year) for EC year y.
+ * In 1900–2099 range, it's Sept 11, except Sept 12 if the following G-year is leap.
  */
-export const meskerem1Gregorian = (ethiopianYear: number): { y: number; m: number; d: number } => {
-  const gy = ethiopianYear + 7; // Gregorian year where EC year starts
-  const sepDay = isGregorianLeap(gy + 1) ? 12 : 11; // Enkutatash shifts one day later before G-leap
-  return { y: gy, m: 9, d: sepDay }; // September = 9
+export const meskerem1Gregorian = (
+  ethiopianYear: number
+): { y: number; m: number; d: number } => {
+  const gy = ethiopianYear + 7;
+  const sepDay = isGregorianLeap(gy + 1) ? 12 : 11;
+  return { y: gy, m: 9, d: sepDay };
 };
 
-export const toUTCDate = (y: number, m: number, d: number) => new Date(Date.UTC(y, m - 1, d));
+/**
+ * Create a UTC date.
+ */
+export const toUTCDate = (y: number, m: number, d: number): Date =>
+  new Date(Date.UTC(y, m - 1, d));
 
-export const addDaysUTC = (date: Date, days: number) => {
+/**
+ * Add days to a UTC date.
+ */
+export const addDaysUTC = (date: Date, days: number): Date => {
   const nd = new Date(date.getTime());
   nd.setUTCDate(nd.getUTCDate() + days);
   return nd;
 };
 
-export const diffDaysUTC = (a: Date, b: Date) => {
+/**
+ * Difference in days between two UTC dates (a - b).
+ */
+export const diffDaysUTC = (a: Date, b: Date): number => {
   const ms = a.getTime() - b.getTime();
   return Math.floor(ms / 86400000);
 };
