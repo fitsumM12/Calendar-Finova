@@ -1,7 +1,7 @@
 {
-  "name": "ethiopian-calendar-xplat",
-  "version": "1.0.4",
-  "description": "Cross-platform Ethiopian (Ethiopic) calendar conversion and formatting with i18n support (Amharic, Afaan Oromo, Somali).",
+  "name": "ethiopian-calendar-fitsum",
+  "version": "1.0.6",
+  "description": "Cross-platform Ethiopian (Ethiopic) calendar conversion and formatting with i18n (Amharic, Afaan Oromo, Somali).",
   "type": "module",
   "main": "dist/index.cjs",
   "module": "dist/index.mjs",
@@ -11,20 +11,25 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
       "require": "./dist/index.cjs"
-    }
+    },
+    "./package.json": "./package.json"
   },
   "sideEffects": false,
   "files": [
     "dist"
   ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fitsumm12/ethiopian-calendar-fitsum.git"
+  },
   "scripts": {
     "build": "tsup src/index.ts --format esm,cjs --dts --clean",
     "dev": "tsup src/index.ts --watch --format esm,cjs --dts",
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "eslint . --ext .ts",
+    "lint": "eslint .",
     "prepare": "npm run build",
-    "prepublishOnly": "npm test && npm run build"
+    "prepublishOnly": "npm run test && npm run build"
   },
   "keywords": [
     "ethiopian",
@@ -35,23 +40,16 @@
     "amharic",
     "oromo",
     "somali",
-    "conversion",
-    "typescript"
+    "conversion"
   ],
   "author": "Fitsum Mesfin Dejene",
   "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/fitsumm12/ethiopian-calendar-xplat.git"
-  },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=18"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
-    "@typescript-eslint/eslint-plugin": "^8.46.0",
-    "@typescript-eslint/parser": "^8.46.0",
-    "eslint": "^9.37.0",
+    "eslint": "^9.0.0",
     "tsup": "^8.0.0",
     "typescript": "^5.5.0",
     "vitest": "^2.1.9"
