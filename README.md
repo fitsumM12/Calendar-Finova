@@ -26,7 +26,7 @@
 ## 📦 Installation
 
 ```bash
-npm i ethiopian-calendar-fitsum
+npm i ethiopian-calendar-finova
 ```
 
 ---
