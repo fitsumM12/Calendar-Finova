@@ -1,9 +1,12 @@
 import type { Locale } from "./types";
 
+// Month names per locale
 export const monthNames: Record<Locale, string[]> = {
   en: [
-    "Meskerem","Tikimt","Hidar","Tahsas","Tir","Yekatit","Megabit",
-    "Miyazia","Ginbot","Sene","Hamle","Nehasse","Pagume"
+    "September", "October", "November", "December", 
+    "January", "February", "March", 
+    "April", "May", "June", 
+    "July", "August", "Pagume"
   ],
   am: [
     "መስከረም","ጥቅምት","ህዳር","ታኅሣሥ","ጥር","የካቲት","መጋቢት",
@@ -19,6 +22,7 @@ export const monthNames: Record<Locale, string[]> = {
   ],
 };
 
+// Weekday names per locale
 export const weekdayNames: Record<
   Locale,
   { short: string[]; long: string[]; narrow: string[] }
@@ -44,3 +48,25 @@ export const weekdayNames: Record<
     narrow: ["I","T","A","K","J","S","A"],
   },
 };
+
+// Mapping Ethiopian month names to English
+const ethToEngMonthMap: Record<string, string> = {
+  Meskerem: "September",
+  Tikimt: "October",
+  Hidar: "November",
+  Tahsas: "December",
+  Tir: "January",
+  Yekatit: "February",
+  Megabit: "March",
+  Miyazia: "April",
+  Ginbot: "May",
+  Sene: "June",
+  Hamle: "July",
+  Nehasse: "August",
+  Pagume: "Pagume", // Extra month
+};
+
+// Helper function to convert Ethiopian month to English
+export function convertEthiopianMonthToEnglish(month: string): string {
+  return ethToEngMonthMap[month] || month;
+}
