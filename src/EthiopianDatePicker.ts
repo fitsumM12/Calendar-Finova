@@ -2,7 +2,7 @@ import { EthiopicDate, Locale, EthiopianDateTimePickerOptions, EthiopianDateTime
 import { gregorianToEthiopic, ethiopicToGregorian } from "./convert";
 import { monthNames, weekdayNames } from "./i18n";
 import { isEthiopianLeap } from "./utils";
-
+import './ethio-datetime-picker.css';
 /**
  * Create an Ethiopian date-time picker instance with full time support
  */
