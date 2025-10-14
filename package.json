@@ -1,6 +1,6 @@
 {
   "name": "ethiopian-calendar-finova",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "Cross-platform Ethiopian (Ethiopic) calendar conversion and formatting with i18n (Amharic, Afaan Oromo, Somali).",
   "type": "module",
   "main": "dist/index.cjs",
