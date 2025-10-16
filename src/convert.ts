@@ -15,7 +15,7 @@ function ethiopianToGregorianTime(
   ethioMinute: number,
   ethioSecond: number
 ): { hour: number; minute: number; second: number } {
-  let gregHour = (ethioHour + 6) % 24;
+  const gregHour = (ethioHour + 6) % 24;
   return { hour: gregHour, minute: ethioMinute, second: ethioSecond };
 }
 
@@ -28,7 +28,7 @@ function gregorianToEthiopianTime(
   gregMinute: number,
   gregSecond: number
 ): { hour: number; minute: number; second: number } {
-  let ethioHour = (gregHour + 18) % 24; // equivalent to -6 mod 24
+  const ethioHour = (gregHour + 18) % 24; // equivalent to -6 mod 24
   return { hour: ethioHour, minute: gregMinute, second: gregSecond };
 }
 

@@ -2,21 +2,20 @@
  * Check if a Gregorian year is a leap year.
  */
 export const isGregorianLeap = (year: number): boolean => {
-  return (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
+  return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
 };
 
 /**
  * Check if an Ethiopian year is a leap year.
- * Ethiopian year y is leap if the following Gregorian year (y + 8) is leap.
+ * Ethiopian leap years occur every 4 years, where (year % 4 === 3).
  */
 export const isEthiopianLeap = (ethiopianYear: number): boolean => {
-  const gregorianYearStart = ethiopianYear + 7;
-  return isGregorianLeap(gregorianYearStart + 1);
+  return ethiopianYear % 4 === 3;
 };
 
 /**
  * Gregorian date of Meskerem 1 (Ethiopian New Year) for EC year y.
- * In 1900–2099 range, it's Sept 11, except Sept 12 if the following G-year is leap.
+ * In 1900–2099 range, it's Sept 11, except Sept 12 if the following Gregorian year is leap.
  */
 export const meskerem1Gregorian = (
   ethiopianYear: number
