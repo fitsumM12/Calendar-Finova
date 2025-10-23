@@ -69,7 +69,7 @@ npm i ethiopian-calendar-finova
 
 ## 🧩 Flow Diagram
 <p align="center">
-  <img src="./assets/flowchart.png" alt="Ethiopian Calendar Conversion Flowchart" width="700">
+  <img src="./assets/calander.png" alt="Ethiopian Calendar Conversion Flowchart" width="700">
 </p>
 ---
 
