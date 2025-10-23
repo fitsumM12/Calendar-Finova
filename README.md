@@ -64,7 +64,6 @@ npm i ethiopian-calendar-finova
 3. Determine Ethiopian month/day from that difference  
 4. Adjust time (UTC → EAT = +3 hrs)  
 5. Return converted Ethiopian date  
-
 ---
 
 ## 🧩 Flow Diagram
