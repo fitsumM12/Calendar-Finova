@@ -9,8 +9,8 @@ export default defineConfig({
   sourcemap: false,
   treeshake: true,
   outDir: 'dist',
-  // This will handle .ts -> .mjs/.cjs conversion
   outExtension: ({ format }) => ({
     js: format === 'esm' ? '.mjs' : '.cjs'
-  })
+  }),
+
 });
