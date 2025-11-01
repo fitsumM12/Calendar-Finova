@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { ethiopicToGregorian, gregorianToEthiopic } from "./convert";
 import { isEthiopianLeap } from "./utils";
 import { format } from "./format";
@@ -88,7 +88,7 @@ const EthiopianDateTimePicker: React.FC<EthiopianDateTimePickerProps> = ({
   const getDaysInMonth = (month: number, year: number) =>
     month === 13 ? (isEthiopianLeap(year) ? 6 : 5) : 30;
 
-  const updateDate = (newEthDate: EthiopianDate) => {
+  const updateDate = useCallback((newEthDate: EthiopianDate) => {
     const newGregorian = ethiopicToGregorian(newEthDate);
     setEthiopianDate(newEthDate);
     setSelectedDate(newGregorian);
@@ -103,66 +103,83 @@ const EthiopianDateTimePicker: React.FC<EthiopianDateTimePickerProps> = ({
         },
       });
     }
-  };
+  }, [onChange, name]);
 
-  const handleDayClick = (day: number) => {
+  const handleDayClick = useCallback((day: number) => {
     const newEthDate = { ...ethiopianDate, day };
     updateDate(newEthDate);
-  };
+  }, [ethiopianDate, updateDate]);
 
-  const handleMonthSelect = (monthIndex: number) => {
+  const handleMonthSelect = useCallback((monthIndex: number) => {
     updateDate({ ...ethiopianDate, month: monthIndex + 1 });
     setView("calendar");
-  };
+  }, [ethiopianDate, updateDate]);
 
-  const handleYearSelect = (year: number) => {
+  const handleYearSelect = useCallback((year: number) => {
     updateDate({ ...ethiopianDate, year });
     setView("calendar");
-  };
+  }, [ethiopianDate, updateDate]);
 
-  const handleTimeChange = (field: keyof EthiopianDate, value: number) => {
+  const handleTimeChange = useCallback((field: keyof EthiopianDate, value: number) => {
     const newEthDate = { ...ethiopianDate, [field]: value };
     updateDate(newEthDate);
-  };
+  }, [ethiopianDate, updateDate]);
 
-  const toggleAMPM = (type: "AM" | "PM") => {
+  const toggleAMPM = useCallback((type: "AM" | "PM") => {
     let h = ethiopianDate.hour;
     if (type === "AM" && h >= 12) h -= 12;
     if (type === "PM" && h < 12) h += 12;
     handleTimeChange("hour", h);
-  };
+  }, [ethiopianDate.hour, handleTimeChange]);
 
-  const formattedDate = selectedDate 
+  const formattedDate = useMemo(() => selectedDate 
     ? format(ethiopianDate, {
         locale: currentLanguage as any,
         weekday: "short",
         includeTime: true,
         timeFormat: "12h",
       })
-    : "Select date...";
+    : "|--|--|----|📅", [selectedDate, ethiopianDate, currentLanguage]);
 
-  const hours = Array.from({ length: 12 }, (_, i) => i + 1);
-  const minutes = Array.from({ length: 60 }, (_, i) => i);
+  const hours = useMemo(() => Array.from({ length: 12 }, (_, i) => i + 1), []);
+  const minutes = useMemo(() => Array.from({ length: 60 }, (_, i) => i), []);
   const ampm = ethiopianDate.hour >= 12 ? "PM" : "AM";
   const totalDays = getDaysInMonth(ethiopianDate.month, ethiopianDate.year);
 
   const getFirstDayOfMonth = (): number => {
     const firstDay = { ...ethiopianDate, day: 1 };
-    return ethiopicToGregorian(firstDay).getDay();
+    const gregorianFirstDay = ethiopicToGregorian(firstDay);
+    // Adjust to make Monday (1) the first day instead of Sunday (0)
+    // Sunday becomes 6, Monday becomes 0, Tuesday becomes 1, etc.
+    return gregorianFirstDay.getDay() === 0 ? 6 : gregorianFirstDay.getDay() - 1;
   };
 
   const firstDayIndex = getFirstDayOfMonth();
-  const yearRange = Array.from(
-    { length: 21 },
-    (_, i) => ethiopianDate.year - 10 + i
+  
+  const yearRange = useMemo(() => 
+    Array.from({ length: 21 }, (_, i) => ethiopianDate.year - 10 + i),
+    [ethiopianDate.year]
   );
-  const ethiopianMonths = monthNames[currentLanguage] || monthNames["en"];
-  const weekdays =
-    weekdayNames[currentLanguage]?.short || weekdayNames["en"].short;
+
+  const ethiopianMonths = useMemo(() => 
+    monthNames[currentLanguage] || monthNames["en"],
+    [currentLanguage]
+  );
+
+  // Reorder weekdays to start from Monday (index 1) and end on Sunday (index 0)
+  const weekdays = useMemo(() => {
+    const weekdaysData = weekdayNames[currentLanguage]?.short || weekdayNames["en"].short;
+    // Move Sunday from index 0 to the end: [Mon, Tue, Wed, Thu, Fri, Sat, Sun]
+    return [...weekdaysData.slice(1), weekdaysData[0]];
+  }, [currentLanguage]);
 
   // --- Inline styles ---
   const styles: Record<string, React.CSSProperties> = {
-    container: { fontFamily: "sans-serif", position: "relative", display: "inline-block" },
+    container: { 
+      fontFamily: "sans-serif", 
+      position: "relative", 
+      display: "inline-block" 
+    },
     trigger: {
       display: "flex",
       justifyContent: "space-between",
@@ -171,11 +188,15 @@ const EthiopianDateTimePicker: React.FC<EthiopianDateTimePickerProps> = ({
       borderRadius: "0.5rem",
       border: "1px solid #d1d5db",
       backgroundColor: "white",
-      minWidth: "260px",
+      minWidth: "160px",
       cursor: "pointer",
       transition: "all 0.2s",
     },
-    triggerText: { fontSize: "12px", fontWeight: 500, color: "#1f2937" },
+    triggerText: { 
+      fontSize: "12px", 
+      fontWeight: 500, 
+      color: "#1f2937" 
+    },
     popup: {
       position: "absolute",
       zIndex: 50,
@@ -268,6 +289,17 @@ const EthiopianDateTimePicker: React.FC<EthiopianDateTimePickerProps> = ({
         ref={triggerRef}
         onClick={() => setIsOpen(!isOpen)}
         style={styles.trigger}
+        role="button"
+        tabIndex={0}
+        aria-haspopup="dialog"
+        aria-expanded={isOpen}
+        aria-label={`Ethiopian date picker, selected: ${formattedDate}`}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setIsOpen(!isOpen);
+          }
+        }}
       >
         <span style={styles.triggerText}>{formattedDate}</span>
         <svg
@@ -290,10 +322,10 @@ const EthiopianDateTimePicker: React.FC<EthiopianDateTimePickerProps> = ({
         </svg>
       </div>
 
-      {/* Popup - rest of your JSX remains the same */}
+      {/* Popup */}
       {isOpen && (
         <div ref={popupRef} style={styles.popup}>
-          {/* Calendar Section - your existing calendar JSX */}
+          {/* Calendar Section */}
           <div style={styles.calendarSection}>
             {/* Header */}
             <div
@@ -322,6 +354,7 @@ const EthiopianDateTimePicker: React.FC<EthiopianDateTimePickerProps> = ({
                   }
                 }}
                 style={styles.headerButton}
+                aria-label="Previous month"
               >
                 ◀
               </button>
@@ -331,6 +364,7 @@ const EthiopianDateTimePicker: React.FC<EthiopianDateTimePickerProps> = ({
                   type="button"
                   onClick={() => setView("month")}
                   style={{ ...styles.headerButton, fontWeight: 600 }}
+                  aria-label="Select month"
                 >
                   {ethiopianMonths[ethiopianDate.month - 1]}
                 </button>
@@ -338,6 +372,7 @@ const EthiopianDateTimePicker: React.FC<EthiopianDateTimePickerProps> = ({
                   type="button"
                   onClick={() => setView("year")}
                   style={{ ...styles.headerButton, fontWeight: 600 }}
+                  aria-label="Select year"
                 >
                   {ethiopianDate.year}
                 </button>
@@ -361,6 +396,7 @@ const EthiopianDateTimePicker: React.FC<EthiopianDateTimePickerProps> = ({
                   }
                 }}
                 style={styles.headerButton}
+                aria-label="Next month"
               >
                 ▶
               </button>
@@ -387,6 +423,8 @@ const EthiopianDateTimePicker: React.FC<EthiopianDateTimePickerProps> = ({
                       color:
                         ethiopianDate.month === i + 1 ? "white" : "#374151",
                     }}
+                    aria-label={`Select ${m}`}
+                    aria-selected={ethiopianDate.month === i + 1}
                   >
                     {m}
                   </button>
@@ -415,6 +453,8 @@ const EthiopianDateTimePicker: React.FC<EthiopianDateTimePickerProps> = ({
                         ethiopianDate.year === y ? "#3b82f6" : "white",
                       color: ethiopianDate.year === y ? "white" : "#374151",
                     }}
+                    aria-label={`Select year ${y}`}
+                    aria-selected={ethiopianDate.year === y}
                   >
                     {y}
                   </button>
@@ -439,7 +479,11 @@ const EthiopianDateTimePicker: React.FC<EthiopianDateTimePickerProps> = ({
                   {weekdays.map((w, i) => (
                     <div
                       key={i}
-                      style={{ color: i >= 5 ? "#b91c1c" : "#4b5563" }}
+                      style={{ 
+                        // Saturday (index 5) and Sunday (index 6) are weekends
+                        color: i >= 5 ? "#b91c1c" : "#4b5563",
+                      }}
+                      aria-label={w}
                     >
                       {w}
                     </div>
@@ -458,7 +502,7 @@ const EthiopianDateTimePicker: React.FC<EthiopianDateTimePickerProps> = ({
                   {Array.from({ length: totalDays }, (_, i) => i + 1).map(
                     (d) => {
                       const dayIndex = (firstDayIndex + d - 1) % 7;
-                      const isWeekend = dayIndex >= 5;
+                      const isWeekend = dayIndex >= 5; // Saturday (5) and Sunday (6) are weekends
                       const isSelected = d === ethiopianDate.day;
                       return (
                         <button
@@ -474,6 +518,8 @@ const EthiopianDateTimePicker: React.FC<EthiopianDateTimePickerProps> = ({
                               ? "#b91c1c"
                               : "#374151",
                           }}
+                          aria-label={`Select ${d} ${ethiopianMonths[ethiopianDate.month - 1]} ${ethiopianDate.year}`}
+                          aria-selected={isSelected}
                         >
                           {d}
                         </button>
@@ -485,7 +531,7 @@ const EthiopianDateTimePicker: React.FC<EthiopianDateTimePickerProps> = ({
             )}
           </div>
 
-          {/* Time picker - your existing time picker JSX */}
+          {/* Time picker - simplified */}
           <div style={styles.timeSection}>
             <div
               style={{
@@ -542,9 +588,9 @@ const EthiopianDateTimePicker: React.FC<EthiopianDateTimePickerProps> = ({
                       }
                       style={{
                         ...styles.timeButton,
-                        ...(ethiopianDate.hour % 12 || 12 === h
+                        ...((ethiopianDate.hour % 12 || 12) === h
                           ? styles.selectedTimeButton
-                          : {}),
+                          : { backgroundColor: "white", color: "#374151" }),
                       }}
                     >
                       {String(h).padStart(2, "0")}
@@ -587,7 +633,7 @@ const EthiopianDateTimePicker: React.FC<EthiopianDateTimePickerProps> = ({
                         ...styles.timeButton,
                         ...(ethiopianDate.minute === m
                           ? styles.selectedTimeButton
-                          : {}),
+                          : { backgroundColor: "white", color: "#374151" }),
                       }}
                     >
                       {String(m).padStart(2, "0")}

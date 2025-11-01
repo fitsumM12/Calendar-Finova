@@ -21,33 +21,65 @@ export const monthNames: Record<Locale, string[]> = {
     "Maarso","Abriil","Maajo","Juun","Luuliyo","Agoosto","Pagume"
   ],
 };
-
-// Weekday names per locale
+// Weekday names per locale (starting from Sunday)
 export const weekdayNames: Record<
   Locale,
   { short: string[]; long: string[]; narrow: string[] }
 > = {
   en: {
-    short: ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"],
-    long: ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"],
-    narrow: ["M","T","W","T","F","S","S"],
+    short: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+    long: [
+      "Sunday",
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday",
+    ],
+    narrow: ["S", "M", "T", "W", "T", "F", "S"],
   },
   am: {
-    short: ["ሰኞ","ማክሰ","ረቡ","ሐሙ","ዓርብ","ቅዳ","እሑ"],
-    long: ["ሰኞ","ማክሰኞ","ረቡዕ","ሐሙስ","ዓርብ","ቅዳሜ","እሑድ"],
-    narrow: ["ሰ","ማ","ረ","ሐ","ዓ","ቅ","እ"],
+    short: ["እሑ", "ሰኞ", "ማክሰ", "ረቡ", "ሐሙ", "ዓርብ", "ቅዳ"],
+    long: [
+      "እሑድ",
+      "ሰኞ",
+      "ማክሰኞ",
+      "ረቡዕ",
+      "ሐሙስ",
+      "ዓርብ",
+      "ቅዳሜ",
+    ],
+    narrow: ["እ", "ሰ", "ማ", "ረ", "ሐ", "ዓ", "ቅ"],
   },
   om: {
-    short: ["Wiix","Kibx","Roob","Kami","Jima","Sanb","Dilb"],
-    long: ["Wiixata","Kibxata","Roobii","Kamiisa","Jimaata","Sanbata","Dilbata"],
-    narrow: ["W","K","R","K","J","S","D"],
+    short: ["Dilb", "Wiix", "Kibx", "Roob", "Kami", "Jima", "Sanb"],
+    long: [
+      "Dilbata",
+      "Wiixata",
+      "Kibxata",
+      "Roobii",
+      "Kamiisa",
+      "Jimaata",
+      "Sanbata",
+    ],
+    narrow: ["D", "W", "K", "R", "K", "J", "S"],
   },
   so: {
-    short: ["Isn","Tal","Arb","Kha","Jim","Sab","Axa"],
-    long: ["Isniin","Talaado","Arbaco","Khamiis","Jimco","Sabti","Axad"],
-    narrow: ["I","T","A","K","J","S","A"],
+    short: ["Axa", "Isn", "Tal", "Arb", "Kha", "Jim", "Sab"],
+    long: [
+      "Axad",
+      "Isniin",
+      "Talaado",
+      "Arbaco",
+      "Khamiis",
+      "Jimco",
+      "Sabti",
+    ],
+    narrow: ["A", "I", "T", "A", "K", "J", "S"],
   },
 };
+
 
 // Mapping Ethiopian month names to English
 const ethToEngMonthMap: Record<string, string> = {
