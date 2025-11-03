@@ -221,7 +221,7 @@ const EthiopianDateTimePicker: React.FC<EthiopianDateTimePickerProps> = ({
       position: "relative",
       display: "inline-block",
       direction: "ltr",
-      zIndex: 1000,
+      // zIndex: 1000,
     },
     trigger: {
       display: "flex",
