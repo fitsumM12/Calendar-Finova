@@ -19,6 +19,7 @@ export type EthiopicDate = {
 
   /** Second (0–59) */
   second: number;
+  ampm: string;
 };
 
 /**

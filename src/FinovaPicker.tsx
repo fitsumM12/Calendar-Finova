@@ -17,6 +17,7 @@ interface EthiopianDate {
   hour: number;
   minute: number;
   second: number;
+  ampm: string
 }
 
 interface EthiopianDateTimePickerProps {
