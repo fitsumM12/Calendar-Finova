@@ -24,6 +24,9 @@ interface EthiopianDateTimePickerProps {
   value?: string; // ISO string or empty string
   onChange?: (event: { target: { name?: string; value: string; valueAsDate: Date | null } }) => void;
   preferredLanguage?: string;
+  disabled?: boolean;
+  minDate?: string; // ISO string
+  maxDate?: string; // ISO string
 }
 
 const EthiopianDateTimePicker: React.FC<EthiopianDateTimePickerProps> = ({
@@ -31,12 +34,14 @@ const EthiopianDateTimePicker: React.FC<EthiopianDateTimePickerProps> = ({
   value,
   onChange,
   preferredLanguage,
+  disabled = false,
+  minDate,
+  maxDate,
 }) => {
   const currentLanguage = (
     preferredLanguage === "or" ? "om" : preferredLanguage || "en"
   ) as keyof typeof monthNames;
 
-  // Parse initial value - handle both string and empty values
   const parseInitialDate = (): Date | null => {
     if (!value) return null;
     try {
@@ -47,7 +52,7 @@ const EthiopianDateTimePicker: React.FC<EthiopianDateTimePickerProps> = ({
   };
 
   const initialDate = parseInitialDate() || new Date();
-  
+
   const [selectedDate, setSelectedDate] = useState<Date | null>(parseInitialDate());
   const [ethiopianDate, setEthiopianDate] = useState<EthiopianDate>(
     selectedDate ? gregorianToEthiopic(initialDate) : gregorianToEthiopic(new Date())
@@ -59,16 +64,12 @@ const EthiopianDateTimePicker: React.FC<EthiopianDateTimePickerProps> = ({
   const triggerRef = useRef<HTMLDivElement | null>(null);
   const hiddenInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Update when value prop changes
   useEffect(() => {
     const newDate = parseInitialDate();
     setSelectedDate(newDate);
-    if (newDate) {
-      setEthiopianDate(gregorianToEthiopic(newDate));
-    }
+    if (newDate) setEthiopianDate(gregorianToEthiopic(newDate));
   }, [value]);
 
-  // Close popup on outside click
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (
@@ -88,12 +89,52 @@ const EthiopianDateTimePicker: React.FC<EthiopianDateTimePickerProps> = ({
   const getDaysInMonth = (month: number, year: number) =>
     month === 13 ? (isEthiopianLeap(year) ? 6 : 5) : 30;
 
+  // Helper functions for date validation
+  const isDateDisabled = useCallback((ethDate: EthiopianDate): boolean => {
+    const date = ethiopicToGregorian(ethDate);
+
+    if (minDate) {
+      const min = new Date(minDate);
+      if (date < min) return true;
+    }
+
+    if (maxDate) {
+      const max = new Date(maxDate);
+      if (date > max) return true;
+    }
+
+    return false;
+  }, [minDate, maxDate]);
+
+  const isDayDisabled = useCallback((day: number): boolean => {
+    const testDate = { ...ethiopianDate, day };
+    return isDateDisabled(testDate);
+  }, [ethiopianDate, isDateDisabled]);
+
+  const isMonthDisabled = useCallback((monthIndex: number): boolean => {
+    // Test with first day of the month
+    const testDate = { ...ethiopianDate, month: monthIndex + 1, day: 1 };
+    return isDateDisabled(testDate);
+  }, [ethiopianDate, isDateDisabled]);
+
+  const isYearDisabled = useCallback((year: number): boolean => {
+    // Test with first day of first month
+    const testDate = { ...ethiopianDate, year, month: 1, day: 1 };
+    return isDateDisabled(testDate);
+  }, [ethiopianDate, isDateDisabled]);
+
   const updateDate = useCallback((newEthDate: EthiopianDate) => {
+    if (disabled) return;
+
     const newGregorian = ethiopicToGregorian(newEthDate);
+
+    // Validate against min/max dates
+    if (minDate && newGregorian < new Date(minDate)) return;
+    if (maxDate && newGregorian > new Date(maxDate)) return;
+
     setEthiopianDate(newEthDate);
     setSelectedDate(newGregorian);
-    
-    // Emit onChange event in the same format as native input
+
     if (onChange) {
       onChange({
         target: {
@@ -103,26 +144,27 @@ const EthiopianDateTimePicker: React.FC<EthiopianDateTimePickerProps> = ({
         },
       });
     }
-  }, [onChange, name]);
+  }, [onChange, name, disabled, minDate, maxDate]);
 
   const handleDayClick = useCallback((day: number) => {
-    const newEthDate = { ...ethiopianDate, day };
-    updateDate(newEthDate);
-  }, [ethiopianDate, updateDate]);
+    if (isDayDisabled(day)) return;
+    updateDate({ ...ethiopianDate, day });
+  }, [ethiopianDate, updateDate, isDayDisabled]);
 
   const handleMonthSelect = useCallback((monthIndex: number) => {
+    if (isMonthDisabled(monthIndex)) return;
     updateDate({ ...ethiopianDate, month: monthIndex + 1 });
     setView("calendar");
-  }, [ethiopianDate, updateDate]);
+  }, [ethiopianDate, updateDate, isMonthDisabled]);
 
   const handleYearSelect = useCallback((year: number) => {
+    if (isYearDisabled(year)) return;
     updateDate({ ...ethiopianDate, year });
     setView("calendar");
-  }, [ethiopianDate, updateDate]);
+  }, [ethiopianDate, updateDate, isYearDisabled]);
 
   const handleTimeChange = useCallback((field: keyof EthiopianDate, value: number) => {
-    const newEthDate = { ...ethiopianDate, [field]: value };
-    updateDate(newEthDate);
+    updateDate({ ...ethiopianDate, [field]: value });
   }, [ethiopianDate, updateDate]);
 
   const toggleAMPM = useCallback((type: "AM" | "PM") => {
@@ -132,13 +174,13 @@ const EthiopianDateTimePicker: React.FC<EthiopianDateTimePickerProps> = ({
     handleTimeChange("hour", h);
   }, [ethiopianDate.hour, handleTimeChange]);
 
-  const formattedDate = useMemo(() => selectedDate 
+  const formattedDate = useMemo(() => selectedDate
     ? format(ethiopianDate, {
-        locale: currentLanguage as any,
-        weekday: "short",
-        includeTime: true,
-        timeFormat: "12h",
-      })
+      locale: currentLanguage as any,
+      weekday: "short",
+      includeTime: true,
+      timeFormat: "12h",
+    })
     : "|--|--|----|📅", [selectedDate, ethiopianDate, currentLanguage]);
 
   const hours = useMemo(() => Array.from({ length: 12 }, (_, i) => i + 1), []);
@@ -149,36 +191,37 @@ const EthiopianDateTimePicker: React.FC<EthiopianDateTimePickerProps> = ({
   const getFirstDayOfMonth = (): number => {
     const firstDay = { ...ethiopianDate, day: 1 };
     const gregorianFirstDay = ethiopicToGregorian(firstDay);
-    // Adjust to make Monday (1) the first day instead of Sunday (0)
-    // Sunday becomes 6, Monday becomes 0, Tuesday becomes 1, etc.
-    return gregorianFirstDay.getDay() === 0 ? 6 : gregorianFirstDay.getDay() - 1;
+    const jsDay = gregorianFirstDay.getDay();
+    return jsDay === 0 ? 6 : jsDay - 1;
   };
-
   const firstDayIndex = getFirstDayOfMonth();
-  
-  const yearRange = useMemo(() => 
+
+  const yearRange = useMemo(() =>
     Array.from({ length: 21 }, (_, i) => ethiopianDate.year - 10 + i),
     [ethiopianDate.year]
   );
 
-  const ethiopianMonths = useMemo(() => 
-    monthNames[currentLanguage] || monthNames["en"],
+  const ethiopianMonths = useMemo(
+    () => monthNames[currentLanguage] || monthNames["en"],
     [currentLanguage]
   );
 
-  // Reorder weekdays to start from Monday (index 1) and end on Sunday (index 0)
-  const weekdays = useMemo(() => {
-    const weekdaysData = weekdayNames[currentLanguage]?.short || weekdayNames["en"].short;
-    // Move Sunday from index 0 to the end: [Mon, Tue, Wed, Thu, Fri, Sat, Sun]
-    return [...weekdaysData.slice(1), weekdaysData[0]];
-  }, [currentLanguage]);
+  const weekdays = useMemo(
+    () => weekdayNames[currentLanguage]?.short || weekdayNames["en"].short,
+    [currentLanguage]
+  );
 
-  // --- Inline styles ---
   const styles: Record<string, React.CSSProperties> = {
-    container: { 
-      fontFamily: "sans-serif", 
-      position: "relative", 
-      display: "inline-block" 
+    container: {
+      // fontFamily: "sans-serif", 
+      // position: "relative", 
+      // display: "inline-block" 
+      all: "initial",
+      fontFamily: "sans-serif",
+      position: "relative",
+      display: "inline-block",
+      direction: "ltr",
+      zIndex: 1000,
     },
     trigger: {
       display: "flex",
@@ -187,119 +230,70 @@ const EthiopianDateTimePicker: React.FC<EthiopianDateTimePickerProps> = ({
       padding: "0.625rem 1rem",
       borderRadius: "0.5rem",
       border: "1px solid #d1d5db",
-      backgroundColor: "white",
+      backgroundColor: disabled ? "#f9fafb" : "white",
       minWidth: "160px",
-      cursor: "pointer",
+      cursor: disabled ? "not-allowed" : "pointer",
       transition: "all 0.2s",
+      opacity: disabled ? 0.6 : 1
     },
-    triggerText: { 
-      fontSize: "12px", 
-      fontWeight: 500, 
-      color: "#1f2937" 
-    },
-    popup: {
-      position: "absolute",
-      zIndex: 50,
-      marginTop: "0.25rem",
-      backgroundColor: "white",
-      border: "1px solid #e5e7eb",
-      borderRadius: "0.75rem",
-      boxShadow: "0 10px 15px rgba(0,0,0,0.1)",
-      display: "flex",
-      width: "440px",
-      height: "380px",
-      overflow: "hidden",
-      top: "100%",
-      left: 0,
-    },
-    calendarSection: {
-      width: "60%",
-      display: "flex",
-      flexDirection: "column",
-      borderRight: "1px solid #f3f4f6",
-      padding: "1rem",
-    },
-    timeSection: {
-      width: "40%",
-      display: "flex",
-      flexDirection: "column",
-      padding: "1rem",
-      backgroundColor: "#f9fafb",
-    },
-    headerButton: {
-      padding: "0.5rem",
-      borderRadius: "0.5rem",
-      transition: "all 0.15s",
-      cursor: "pointer",
-      border: "none",
-      backgroundColor: "transparent",
-    },
-    dayButton: {
-      width: "2rem",
-      height: "2rem",
-      borderRadius: "0.5rem",
-      fontSize: "12px",
-      fontWeight: 500,
-      transition: "all 0.15s",
-      border: "none",
-      cursor: "pointer",
-      backgroundColor: "white",
-    },
-    selectedDay: {
-      backgroundColor: "#3b82f6",
-      color: "white",
-      boxShadow: "0 1px 2px rgba(0,0,0,0.1)",
-    },
-    timeButton: {
-      padding: "0.25rem 0.5rem",
-      borderRadius: "0.5rem",
-      fontSize: "12px",
-      fontWeight: 500,
-      transition: "all 0.15s",
-      cursor: "pointer",
-      marginBottom: "0.25rem",
-      border: "none",
-      width: "100%",
-      textAlign: "center",
-    },
-    selectedTimeButton: {
-      backgroundColor: "#3b82f6",
-      color: "white",
-      boxShadow: "0 1px 2px rgba(0,0,0,0.1)",
-    },
-    hiddenInput: {
-      display: "none",
-    },
+    triggerText: { fontSize: "12px", fontWeight: 500, color: disabled ? "#9ca3af" : "#1f2937" },
+    popup: { position: "absolute", zIndex: 50, marginTop: "0.25rem", backgroundColor: "white", border: "1px solid #e5e7eb", borderRadius: "0.75rem", boxShadow: "0 10px 15px rgba(0,0,0,0.1)", display: "flex", width: "440px", height: "380px", overflow: "hidden", top: "100%", left: 0 },
+    calendarSection: { width: "60%", display: "flex", flexDirection: "column", borderRight: "1px solid #f3f4f6", padding: "1rem" },
+    timeSection: { width: "40%", display: "flex", flexDirection: "column", padding: "1rem", backgroundColor: "#f9fafb" },
+    headerButton: { padding: "0.5rem", borderRadius: "0.5rem", transition: "all 0.15s", cursor: "pointer", border: "none", backgroundColor: "transparent" },
+    dayButton: { width: "2rem", height: "2rem", borderRadius: "0.5rem", fontSize: "12px", fontWeight: 500, transition: "all 0.15s", border: "none", cursor: "pointer", backgroundColor: "white" },
+    disabledButton: { opacity: 0.4, cursor: "not-allowed", backgroundColor: "#f3f4f6", color: "#9ca3af" },
+    selectedDay: { backgroundColor: "#3b82f6", color: "white", boxShadow: "0 1px 2px rgba(0,0,0,0.1)" },
+    timeButton: { padding: "0.25rem 0.5rem", borderRadius: "0.5rem", fontSize: "12px", fontWeight: 500, transition: "all 0.15s", cursor: "pointer", marginBottom: "0.25rem", border: "none", width: "100%", textAlign: "center" },
+    selectedTimeButton: { backgroundColor: "#3b82f6", color: "white", boxShadow: "0 1px 2px rgba(0,0,0,0.1)" },
+    hiddenInput: { display: "none" },
   };
+
+  const navigateMonth = useCallback((direction: -1 | 1) => {
+    if (view === "calendar") {
+      let newMonth = ethiopianDate.month + direction;
+      let newYear = ethiopianDate.year;
+
+      if (newMonth === 0) {
+        newMonth = 13;
+        newYear--;
+      } else if (newMonth === 14) {
+        newMonth = 1;
+        newYear++;
+      }
+
+      updateDate({
+        ...ethiopianDate,
+        month: newMonth,
+        year: newYear,
+      });
+    }
+  }, [ethiopianDate, updateDate, view]);
 
   return (
     <div style={styles.container}>
-      {/* Hidden native input for form compatibility */}
       <input
         ref={hiddenInputRef}
         type="text"
         name={name}
         value={selectedDate ? selectedDate.toISOString() : ""}
-        onChange={() => {}} // Handled by our component
+        onChange={() => { }}
         style={styles.hiddenInput}
+        disabled={disabled}
       />
-      
+
       {/* Trigger */}
       <div
         ref={triggerRef}
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => !disabled && setIsOpen(!isOpen)}
         style={styles.trigger}
         role="button"
-        tabIndex={0}
+        tabIndex={disabled ? -1 : 0}
         aria-haspopup="dialog"
         aria-expanded={isOpen}
+        aria-disabled={disabled}
         aria-label={`Ethiopian date picker, selected: ${formattedDate}`}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            setIsOpen(!isOpen);
-          }
-        }}
+        onKeyDown={(e) => { if (!disabled && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); setIsOpen(!isOpen); } }}
       >
         <span style={styles.triggerText}>{formattedDate}</span>
         <svg
@@ -308,53 +302,29 @@ const EthiopianDateTimePicker: React.FC<EthiopianDateTimePickerProps> = ({
             height: 16,
             transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
             transition: "transform 0.2s",
+            opacity: disabled ? 0.5 : 1
           }}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
         >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M19 9l-7 7-7-7"
-          />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
         </svg>
       </div>
 
       {/* Popup */}
-      {isOpen && (
+      {isOpen && !disabled && (
         <div ref={popupRef} style={styles.popup}>
           {/* Calendar Section */}
           <div style={styles.calendarSection}>
             {/* Header */}
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: "1rem",
-              }}
-            >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
               <button
                 type="button"
-                onClick={() => {
-                  if (view === "calendar") {
-                    updateDate({
-                      ...ethiopianDate,
-                      month:
-                        ethiopianDate.month === 1
-                          ? 13
-                          : ethiopianDate.month - 1,
-                      year:
-                        ethiopianDate.month === 1
-                          ? ethiopianDate.year - 1
-                          : ethiopianDate.year,
-                    });
-                  }
-                }}
+                onClick={() => navigateMonth(-1)}
                 style={styles.headerButton}
                 aria-label="Previous month"
+                disabled={view !== "calendar"}
               >
                 ◀
               </button>
@@ -380,23 +350,10 @@ const EthiopianDateTimePicker: React.FC<EthiopianDateTimePickerProps> = ({
 
               <button
                 type="button"
-                onClick={() => {
-                  if (view === "calendar") {
-                    updateDate({
-                      ...ethiopianDate,
-                      month:
-                        ethiopianDate.month === 13
-                          ? 1
-                          : ethiopianDate.month + 1,
-                      year:
-                        ethiopianDate.month === 13
-                          ? ethiopianDate.year + 1
-                          : ethiopianDate.year,
-                    });
-                  }
-                }}
+                onClick={() => navigateMonth(1)}
                 style={styles.headerButton}
                 aria-label="Next month"
+                disabled={view !== "calendar"}
               >
                 ▶
               </button>
@@ -404,193 +361,122 @@ const EthiopianDateTimePicker: React.FC<EthiopianDateTimePickerProps> = ({
 
             {/* Month view */}
             {view === "month" && (
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(3, 1fr)",
-                  gap: "0.5rem",
-                }}
-              >
-                {ethiopianMonths.map((m, i) => (
-                  <button
-                    type="button"
-                    key={i}
-                    onClick={() => handleMonthSelect(i)}
-                    style={{
-                      ...styles.dayButton,
-                      backgroundColor:
-                        ethiopianDate.month === i + 1 ? "#3b82f6" : "white",
-                      color:
-                        ethiopianDate.month === i + 1 ? "white" : "#374151",
-                    }}
-                    aria-label={`Select ${m}`}
-                    aria-selected={ethiopianDate.month === i + 1}
-                  >
-                    {m}
-                  </button>
-                ))}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "0.5rem" }}>
+                {ethiopianMonths.map((m, i) => {
+                  const isDisabled = isMonthDisabled(i);
+                  const isSelected = ethiopianDate.month === i + 1;
+                  return (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => !isDisabled && handleMonthSelect(i)}
+                      style={{
+                        ...styles.dayButton,
+                        ...(isDisabled ? styles.disabledButton : {}),
+                        backgroundColor: isSelected ? "#3b82f6" : "white",
+                        color: isSelected ? "white" : isDisabled ? "#9ca3af" : "#374151",
+                        cursor: isDisabled ? "not-allowed" : "pointer",
+                      }}
+                      aria-label={`Select ${m}`}
+                      aria-selected={isSelected}
+                      aria-disabled={isDisabled}
+                      disabled={isDisabled}
+                    >
+                      {m}
+                    </button>
+                  );
+                })}
               </div>
             )}
 
             {/* Year view */}
             {view === "year" && (
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(3, 1fr)",
-                  gap: "0.5rem",
-                  overflowY: "auto",
-                }}
-              >
-                {yearRange.map((y) => (
-                  <button
-                    type="button"
-                    key={y}
-                    onClick={() => handleYearSelect(y)}
-                    style={{
-                      ...styles.dayButton,
-                      backgroundColor:
-                        ethiopianDate.year === y ? "#3b82f6" : "white",
-                      color: ethiopianDate.year === y ? "white" : "#374151",
-                    }}
-                    aria-label={`Select year ${y}`}
-                    aria-selected={ethiopianDate.year === y}
-                  >
-                    {y}
-                  </button>
-                ))}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "0.5rem", overflowY: "auto" }}>
+                {yearRange.map((y) => {
+                  const isDisabled = isYearDisabled(y);
+                  const isSelected = ethiopianDate.year === y;
+                  return (
+                    <button
+                      key={y}
+                      type="button"
+                      onClick={() => !isDisabled && handleYearSelect(y)}
+                      style={{
+                        ...styles.dayButton,
+                        ...(isDisabled ? styles.disabledButton : {}),
+                        backgroundColor: isSelected ? "#3b82f6" : "white",
+                        color: isSelected ? "white" : isDisabled ? "#9ca3af" : "#374151",
+                        cursor: isDisabled ? "not-allowed" : "pointer",
+                      }}
+                      aria-label={`Select year ${y}`}
+                      aria-selected={isSelected}
+                      aria-disabled={isDisabled}
+                      disabled={isDisabled}
+                    >
+                      {y}
+                    </button>
+                  );
+                })}
               </div>
             )}
 
             {/* Calendar days */}
             {view === "calendar" && (
               <>
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(7, 1fr)",
-                    textAlign: "center",
-                    fontSize: "10px",
-                    fontWeight: 600,
-                    color: "#4b5563",
-                    marginBottom: "0.5rem",
-                  }}
-                >
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", textAlign: "center", fontSize: "10px", fontWeight: 600, color: "#4b5563", marginBottom: "0.5rem" }}>
                   {weekdays.map((w, i) => (
-                    <div
-                      key={i}
-                      style={{ 
-                        // Saturday (index 5) and Sunday (index 6) are weekends
-                        color: i >= 5 ? "#b91c1c" : "#4b5563",
-                      }}
-                      aria-label={w}
-                    >
-                      {w}
-                    </div>
+                    <div key={i} style={{ color: i >= 5 ? "#b91c1c" : "#4b5563" }} aria-label={w}>{w}</div>
                   ))}
                 </div>
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(7, 1fr)",
-                    gap: "0.25rem",
-                  }}
-                >
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: "0.25rem" }}>
                   {Array.from({ length: firstDayIndex }, (_, i) => (
                     <div key={`empty-${i}`} style={{ width: 32, height: 32 }} />
                   ))}
-                  {Array.from({ length: totalDays }, (_, i) => i + 1).map(
-                    (d) => {
-                      const dayIndex = (firstDayIndex + d - 1) % 7;
-                      const isWeekend = dayIndex >= 5; // Saturday (5) and Sunday (6) are weekends
-                      const isSelected = d === ethiopianDate.day;
-                      return (
-                        <button
-                          type="button"
-                          key={d}
-                          onClick={() => handleDayClick(d)}
-                          style={{
-                            ...styles.dayButton,
-                            ...(isSelected ? styles.selectedDay : {}),
-                            color: isSelected
-                              ? "white"
-                              : isWeekend
-                              ? "#b91c1c"
-                              : "#374151",
-                          }}
-                          aria-label={`Select ${d} ${ethiopianMonths[ethiopianDate.month - 1]} ${ethiopianDate.year}`}
-                          aria-selected={isSelected}
-                        >
-                          {d}
-                        </button>
-                      );
-                    }
-                  )}
+                  {Array.from({ length: totalDays }, (_, i) => i + 1).map((d) => {
+                    const dayIndex = (firstDayIndex + d - 1) % 7;
+                    const isWeekend = dayIndex === 5 || dayIndex === 6; // Sat or Sun
+                    const isSelected = d === ethiopianDate.day;
+                    const isDisabled = isDayDisabled(d);
+
+                    return (
+                      <button
+                        key={d}
+                        type="button"
+                        onClick={() => !isDisabled && handleDayClick(d)}
+                        style={{
+                          ...styles.dayButton,
+                          ...(isDisabled ? styles.disabledButton : {}),
+                          ...(isSelected ? styles.selectedDay : {}),
+                          color: isSelected ? "white" : isDisabled ? "#9ca3af" : isWeekend ? "#b91c1c" : "#374151",
+                          cursor: isDisabled ? "not-allowed" : "pointer",
+                        }}
+                        aria-label={`Select ${d} ${ethiopianMonths[ethiopianDate.month - 1]} ${ethiopianDate.year}`}
+                        aria-selected={isSelected}
+                        aria-disabled={isDisabled}
+                        disabled={isDisabled}
+                      >
+                        {d}
+                      </button>
+                    );
+                  })}
                 </div>
               </>
             )}
           </div>
 
-          {/* Time picker - simplified */}
+          {/* Time picker */}
           <div style={styles.timeSection}>
-            <div
-              style={{
-                fontSize: "12px",
-                fontWeight: 600,
-                color: "#374151",
-                textAlign: "center",
-                marginBottom: "0.75rem",
-              }}
-            >
-              Time
-            </div>
-            <div
-              style={{
-                display: "flex",
-                gap: "0.75rem",
-                justifyContent: "center",
-              }}
-            >
-              {/* Hour */}
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                }}
-              >
-                <label
-                  style={{
-                    fontSize: "10px",
-                    color: "#6b7280",
-                    marginBottom: "0.5rem",
-                  }}
-                >
-                  Hour
-                </label>
-                <div
-                  style={{
-                    width: 48,
-                    height: 192,
-                    overflowY: "auto",
-                    border: "1px solid #d1d5db",
-                    borderRadius: "0.5rem",
-                  }}
-                >
+            <div style={{ fontSize: "12px", fontWeight: 600, color: "#374151", textAlign: "center", marginBottom: "0.75rem" }}>Time</div>
+            <div style={{ display: "flex", gap: "0.75rem", justifyContent: "center" }}>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                <label style={{ fontSize: "10px", color: "#6b7280", marginBottom: "0.5rem" }}>Hour</label>
+                <div style={{ width: 48, height: 192, overflowY: "auto", border: "1px solid #d1d5db", borderRadius: "0.5rem" }}>
                   {hours.map((h) => (
                     <div
                       key={h}
-                      onClick={() =>
-                        handleTimeChange(
-                          "hour",
-                          ampm === "PM" ? (h % 12) + 12 : h % 12
-                        )
-                      }
+                      onClick={() => handleTimeChange("hour", ampm === "PM" ? (h % 12) + 12 : h % 12)}
                       style={{
                         ...styles.timeButton,
-                        ...((ethiopianDate.hour % 12 || 12) === h
-                          ? styles.selectedTimeButton
-                          : { backgroundColor: "white", color: "#374151" }),
+                        ...((ethiopianDate.hour % 12 || 12) === h ? styles.selectedTimeButton : { backgroundColor: "white", color: "#374151" }),
                       }}
                     >
                       {String(h).padStart(2, "0")}
@@ -599,41 +485,16 @@ const EthiopianDateTimePicker: React.FC<EthiopianDateTimePickerProps> = ({
                 </div>
               </div>
 
-              {/* Minute */}
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                }}
-              >
-                <label
-                  style={{
-                    fontSize: "10px",
-                    color: "#6b7280",
-                    marginBottom: "0.5rem",
-                  }}
-                >
-                  Minute
-                </label>
-                <div
-                  style={{
-                    width: 48,
-                    height: 192,
-                    overflowY: "auto",
-                    border: "1px solid #d1d5db",
-                    borderRadius: "0.5rem",
-                  }}
-                >
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                <label style={{ fontSize: "10px", color: "#6b7280", marginBottom: "0.5rem" }}>Minute</label>
+                <div style={{ width: 48, height: 192, overflowY: "auto", border: "1px solid #d1d5db", borderRadius: "0.5rem" }}>
                   {minutes.map((m) => (
                     <div
                       key={m}
                       onClick={() => handleTimeChange("minute", m)}
                       style={{
                         ...styles.timeButton,
-                        ...(ethiopianDate.minute === m
-                          ? styles.selectedTimeButton
-                          : { backgroundColor: "white", color: "#374151" }),
+                        ...(ethiopianDate.minute === m ? styles.selectedTimeButton : { backgroundColor: "white", color: "#374151" }),
                       }}
                     >
                       {String(m).padStart(2, "0")}
@@ -642,36 +503,15 @@ const EthiopianDateTimePicker: React.FC<EthiopianDateTimePickerProps> = ({
                 </div>
               </div>
 
-              {/* AM/PM */}
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                }}
-              >
-                <label
-                  style={{
-                    fontSize: "10px",
-                    color: "#6b7280",
-                    marginBottom: "0.5rem",
-                  }}
-                >
-                  AM/PM
-                </label>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                <label style={{ fontSize: "10px", color: "#6b7280", marginBottom: "0.5rem" }}>AM/PM</label>
                 <button
                   type="button"
                   onClick={() => toggleAMPM("AM")}
                   style={{
                     ...styles.timeButton,
-                    ...(ampm === "AM"
-                      ? styles.selectedTimeButton
-                      : {
-                          backgroundColor: "white",
-                          color: "#374151",
-                          border: "1px solid #d1d5db",
-                        }),
-                    marginBottom: "0.25rem",
+                    ...(ampm === "AM" ? styles.selectedTimeButton : { backgroundColor: "white", color: "#374151", border: "1px solid #d1d5db" }),
+                    marginBottom: "0.25rem"
                   }}
                 >
                   AM
@@ -681,13 +521,7 @@ const EthiopianDateTimePicker: React.FC<EthiopianDateTimePickerProps> = ({
                   onClick={() => toggleAMPM("PM")}
                   style={{
                     ...styles.timeButton,
-                    ...(ampm === "PM"
-                      ? styles.selectedTimeButton
-                      : {
-                          backgroundColor: "white",
-                          color: "#374151",
-                          border: "1px solid #d1d5db",
-                        }),
+                    ...(ampm === "PM" ? styles.selectedTimeButton : { backgroundColor: "white", color: "#374151", border: "1px solid #d1d5db" })
                   }}
                 >
                   PM

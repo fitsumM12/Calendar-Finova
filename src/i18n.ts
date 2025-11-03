@@ -27,56 +27,56 @@ export const weekdayNames: Record<
   { short: string[]; long: string[]; narrow: string[] }
 > = {
   en: {
-    short: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+    short: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
     long: [
-      "Sunday",
       "Monday",
       "Tuesday",
       "Wednesday",
       "Thursday",
       "Friday",
       "Saturday",
+      "Sunday",
     ],
-    narrow: ["S", "M", "T", "W", "T", "F", "S"],
+    narrow: ["M", "T", "W", "T", "F", "S", "S"],
   },
   am: {
-    short: ["እሑ", "ሰኞ", "ማክሰ", "ረቡ", "ሐሙ", "ዓርብ", "ቅዳ"],
+    short: ["ሰኞ", "ማክሰ", "ረቡ", "ሐሙ", "ዓርብ", "ቅዳ", "እሑ"],
     long: [
-      "እሑድ",
       "ሰኞ",
       "ማክሰኞ",
       "ረቡዕ",
       "ሐሙስ",
       "ዓርብ",
       "ቅዳሜ",
+      "እሑድ",
     ],
-    narrow: ["እ", "ሰ", "ማ", "ረ", "ሐ", "ዓ", "ቅ"],
+    narrow: ["ሰ", "ማ", "ረ", "ሐ", "ዓ", "ቅ", "እ"],
   },
   om: {
-    short: ["Dilb", "Wiix", "Kibx", "Roob", "Kami", "Jima", "Sanb"],
+    short: ["Wiix", "Kibx", "Roob", "Kami", "Jima", "Sanb", "Dilb"],
     long: [
-      "Dilbata",
       "Wiixata",
       "Kibxata",
       "Roobii",
       "Kamiisa",
       "Jimaata",
       "Sanbata",
+      "Dilbata",
     ],
-    narrow: ["D", "W", "K", "R", "K", "J", "S"],
+    narrow: ["W", "K", "R", "K", "J", "S", "D"],
   },
   so: {
-    short: ["Axa", "Isn", "Tal", "Arb", "Kha", "Jim", "Sab"],
+    short: ["Isn", "Tal", "Arb", "Kha", "Jim", "Sab", "Axa"],
     long: [
-      "Axad",
       "Isniin",
       "Talaado",
       "Arbaco",
       "Khamiis",
       "Jimco",
       "Sabti",
+      "Axad",
     ],
-    narrow: ["A", "I", "T", "A", "K", "J", "S"],
+    narrow: ["I", "T", "A", "K", "J", "S", "A"],
   },
 };
 
