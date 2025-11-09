@@ -8,10 +8,10 @@ import { ethiopicToGregorian } from "./convert";
 function calculateEthiopianWeekday(date: EthiopicDate): number {
   // Convert Ethiopian date to Gregorian to get the actual day of week
   const gregorianDate = ethiopicToGregorian(date);
-  
+
   // Get Gregorian weekday (0=Sunday, 1=Monday, ..., 6=Saturday)
   const gregWeekday = gregorianDate.getDay();
-  
+
   // Map to Ethiopian weekday system where Monday is the first day
   // Gregorian: Sun=0, Mon=1, Tue=2, Wed=3, Thu=4, Fri=5, Sat=6
   // Ethiopian: Mon=0, Tue=1, Wed=2, Thu=3, Fri=4, Sat=5, Sun=6
@@ -25,11 +25,11 @@ function formatTime12Hour(hours: number, minutes: number, seconds: number): stri
   const ampm = hours >= 12 ? 'PM' : 'AM';
   let displayHours = hours % 12;
   displayHours = displayHours === 0 ? 12 : displayHours; // Convert 0 to 12
-  
+
   const hh = displayHours.toString().padStart(2, "0");
   const mm = minutes.toString().padStart(2, "0");
   const ss = seconds.toString().padStart(2, "0");
-  
+
   return `${hh}:${mm}:${ss} ${ampm}`;
 }
 
@@ -40,7 +40,7 @@ function formatTime24Hour(hours: number, minutes: number, seconds: number): stri
   const hh = hours.toString().padStart(2, "0");
   const mm = minutes.toString().padStart(2, "0");
   const ss = seconds.toString().padStart(2, "0");
-  
+
   return `${hh}:${mm}:${ss}`;
 }
 
@@ -48,9 +48,15 @@ function formatTime24Hour(hours: number, minutes: number, seconds: number): stri
  * Format an Ethiopian date to a readable string.
  */
 export function format(date: EthiopicDate, opts: FormatOptions = {}): string {
-  const locale = opts.locale ?? "en";
+  let locale = (opts.locale || "en").toLowerCase() as keyof typeof monthNames;
+  if (!(locale in monthNames)) {
+    console.warn(`Unsupported locale "${opts.locale}", falling back to "en"`);
+    locale = "en";
+  }
+
   const months = monthNames[locale];
   const weekdays = weekdayNames[locale];
+
 
   // Use correct weekday calculation instead of broken JDN
   const weekdayIndex = calculateEthiopianWeekday(date);

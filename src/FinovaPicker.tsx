@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { ethiopicToGregorian, gregorianToEthiopic } from "./convert";
 import { isEthiopianLeap } from "./utils";
 import { format } from "./format";
@@ -17,17 +17,18 @@ interface EthiopianDate {
   hour: number;
   minute: number;
   second: number;
-  ampm: string
+  ampm: string;
 }
 
 interface EthiopianDateTimePickerProps {
   name?: string;
-  value?: string; // ISO string or empty string
+  value?: string;
   onChange?: (event: { target: { name?: string; value: string; valueAsDate: Date | null } }) => void;
   preferredLanguage?: string;
   disabled?: boolean;
-  minDate?: string; // ISO string
-  maxDate?: string; // ISO string
+  minDate?: string;
+  maxDate?: string;
+  showTime?: boolean;
 }
 
 const EthiopianDateTimePicker: React.FC<EthiopianDateTimePickerProps> = ({
@@ -38,6 +39,7 @@ const EthiopianDateTimePicker: React.FC<EthiopianDateTimePickerProps> = ({
   disabled = false,
   minDate,
   maxDate,
+  showTime = true,
 }) => {
   const currentLanguage = (
     preferredLanguage === "or" ? "om" : preferredLanguage || "en"
@@ -179,10 +181,10 @@ const EthiopianDateTimePicker: React.FC<EthiopianDateTimePickerProps> = ({
     ? format(ethiopianDate, {
       locale: currentLanguage as any,
       weekday: "short",
-      includeTime: true,
+      includeTime: showTime,
       timeFormat: "12h",
     })
-    : "|--|--|----|📅", [selectedDate, ethiopianDate, currentLanguage]);
+    : "|--|--|----|📅", [selectedDate, ethiopianDate, currentLanguage, showTime]);
 
   const hours = useMemo(() => Array.from({ length: 12 }, (_, i) => i + 1), []);
   const minutes = useMemo(() => Array.from({ length: 60 }, (_, i) => i), []);
@@ -197,10 +199,14 @@ const EthiopianDateTimePicker: React.FC<EthiopianDateTimePickerProps> = ({
   };
   const firstDayIndex = getFirstDayOfMonth();
 
-  const yearRange = useMemo(() =>
-    Array.from({ length: 21 }, (_, i) => ethiopianDate.year - 10 + i),
-    [ethiopianDate.year]
-  );
+  // Enhanced year navigation
+  const [yearPage, setYearPage] = useState(0);
+  const yearsPerPage = 12;
+
+  const yearRange = useMemo(() => {
+    const startYear = ethiopianDate.year - 6 + (yearPage * yearsPerPage);
+    return Array.from({ length: yearsPerPage }, (_, i) => startYear + i);
+  }, [ethiopianDate.year, yearPage]);
 
   const ethiopianMonths = useMemo(
     () => monthNames[currentLanguage] || monthNames["en"],
@@ -212,17 +218,21 @@ const EthiopianDateTimePicker: React.FC<EthiopianDateTimePickerProps> = ({
     [currentLanguage]
   );
 
+  const navigateYearPage = useCallback((direction: -1 | 1) => {
+    setYearPage(prev => prev + direction);
+  }, []);
+
+  const resetYearPage = useCallback(() => {
+    setYearPage(0);
+  }, []);
+
   const styles: Record<string, React.CSSProperties> = {
     container: {
-      // fontFamily: "sans-serif", 
-      // position: "relative", 
-      // display: "inline-block" 
       all: "initial",
       fontFamily: "sans-serif",
       position: "relative",
       display: "inline-block",
       direction: "ltr",
-      // zIndex: 1000,
     },
     trigger: {
       display: "flex",
@@ -238,16 +248,97 @@ const EthiopianDateTimePicker: React.FC<EthiopianDateTimePickerProps> = ({
       opacity: disabled ? 0.6 : 1
     },
     triggerText: { fontSize: "12px", fontWeight: 500, color: disabled ? "#9ca3af" : "#1f2937" },
-    popup: { position: "absolute", zIndex: 50, marginTop: "0.25rem", backgroundColor: "white", border: "1px solid #e5e7eb", borderRadius: "0.75rem", boxShadow: "0 10px 15px rgba(0,0,0,0.1)", display: "flex", width: "440px", height: "380px", overflow: "hidden", top: "100%", left: 0 },
-    calendarSection: { width: "60%", display: "flex", flexDirection: "column", borderRight: "1px solid #f3f4f6", padding: "1rem" },
-    timeSection: { width: "40%", display: "flex", flexDirection: "column", padding: "1rem", backgroundColor: "#f9fafb" },
-    headerButton: { padding: "0.5rem", borderRadius: "0.5rem", transition: "all 0.15s", cursor: "pointer", border: "none", backgroundColor: "transparent" },
-    dayButton: { width: "2rem", height: "2rem", borderRadius: "0.5rem", fontSize: "12px", fontWeight: 500, transition: "all 0.15s", border: "none", cursor: "pointer", backgroundColor: "white" },
-    disabledButton: { opacity: 0.4, cursor: "not-allowed", backgroundColor: "#f3f4f6", color: "#9ca3af" },
-    selectedDay: { backgroundColor: "#3b82f6", color: "white", boxShadow: "0 1px 2px rgba(0,0,0,0.1)" },
-    timeButton: { padding: "0.25rem 0.5rem", borderRadius: "0.5rem", fontSize: "12px", fontWeight: 500, transition: "all 0.15s", cursor: "pointer", marginBottom: "0.25rem", border: "none", width: "100%", textAlign: "center" },
-    selectedTimeButton: { backgroundColor: "#3b82f6", color: "white", boxShadow: "0 1px 2px rgba(0,0,0,0.1)" },
-    hiddenInput: { display: "none" },
+    popup: {
+      position: "absolute",
+      zIndex: 50,
+      marginTop: "0.25rem",
+      backgroundColor: "white",
+      border: "1px solid #e5e7eb",
+      borderRadius: "0.75rem",
+      boxShadow: "0 10px 15px rgba(0,0,0,0.1)",
+      display: "flex",
+      width: showTime ? "440px" : "300px",
+      height: "380px",
+      overflow: "hidden",
+      top: "100%",
+      left: 0
+    },
+    calendarSection: {
+      width: showTime ? "60%" : "100%",
+      display: "flex",
+      flexDirection: "column",
+      borderRight: showTime ? "1px solid #f3f4f6" : "none",
+      padding: "1rem"
+    },
+    timeSection: {
+      width: "40%",
+      display: "flex",
+      flexDirection: "column",
+      padding: "1rem",
+      backgroundColor: "#f9fafb"
+    },
+    headerButton: {
+      padding: "0.5rem",
+      borderRadius: "0.5rem",
+      transition: "all 0.15s",
+      cursor: "pointer",
+      border: "none",
+      backgroundColor: "transparent"
+    },
+    dayButton: {
+      width: "2rem",
+      height: "2rem",
+      borderRadius: "0.5rem",
+      fontSize: "12px",
+      fontWeight: 500,
+      transition: "all 0.15s",
+      border: "none",
+      cursor: "pointer",
+      backgroundColor: "white"
+    },
+    disabledButton: {
+      opacity: 0.4,
+      cursor: "not-allowed",
+      backgroundColor: "#f3f4f6",
+      color: "#9ca3af"
+    },
+    selectedDay: {
+      backgroundColor: "#3b82f6",
+      color: "white",
+      boxShadow: "0 1px 2px rgba(0,0,0,0.1)"
+    },
+    timeButton: {
+      padding: "0.25rem 0.5rem",
+      borderRadius: "0.5rem",
+      fontSize: "12px",
+      fontWeight: 500,
+      transition: "all 0.15s",
+      cursor: "pointer",
+      marginBottom: "0.25rem",
+      border: "none",
+      width: "100%",
+      textAlign: "center"
+    },
+    selectedTimeButton: {
+      backgroundColor: "#3b82f6",
+      color: "white",
+      boxShadow: "0 1px 2px rgba(0,0,0,0.1)"
+    },
+    hiddenInput: {
+      display: "none"
+    },
+    yearNavigation: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: "1rem"
+    },
+    yearGrid: {
+      display: "grid",
+      gridTemplateColumns: "repeat(3, 1fr)",
+      gap: "0.5rem",
+      overflowY: "auto"
+    }
   };
 
   const navigateMonth = useCallback((direction: -1 | 1) => {
@@ -268,8 +359,10 @@ const EthiopianDateTimePicker: React.FC<EthiopianDateTimePickerProps> = ({
         month: newMonth,
         year: newYear,
       });
+    } else if (view === "year") {
+      navigateYearPage(direction);
     }
-  }, [ethiopianDate, updateDate, view]);
+  }, [ethiopianDate, updateDate, view, navigateYearPage]);
 
   return (
     <div style={styles.container}>
@@ -324,8 +417,7 @@ const EthiopianDateTimePicker: React.FC<EthiopianDateTimePickerProps> = ({
                 type="button"
                 onClick={() => navigateMonth(-1)}
                 style={styles.headerButton}
-                aria-label="Previous month"
-                disabled={view !== "calendar"}
+                aria-label={view === "year" ? "Previous years" : "Previous month"}
               >
                 ◀
               </button>
@@ -333,7 +425,7 @@ const EthiopianDateTimePicker: React.FC<EthiopianDateTimePickerProps> = ({
               <div style={{ display: "flex", gap: "0.5rem" }}>
                 <button
                   type="button"
-                  onClick={() => setView("month")}
+                  onClick={() => { setView("month"); resetYearPage(); }}
                   style={{ ...styles.headerButton, fontWeight: 600 }}
                   aria-label="Select month"
                 >
@@ -341,7 +433,7 @@ const EthiopianDateTimePicker: React.FC<EthiopianDateTimePickerProps> = ({
                 </button>
                 <button
                   type="button"
-                  onClick={() => setView("year")}
+                  onClick={() => { setView("year"); resetYearPage(); }}
                   style={{ ...styles.headerButton, fontWeight: 600 }}
                   aria-label="Select year"
                 >
@@ -353,8 +445,7 @@ const EthiopianDateTimePicker: React.FC<EthiopianDateTimePickerProps> = ({
                 type="button"
                 onClick={() => navigateMonth(1)}
                 style={styles.headerButton}
-                aria-label="Next month"
-                disabled={view !== "calendar"}
+                aria-label={view === "year" ? "Next years" : "Next month"}
               >
                 ▶
               </button>
@@ -392,7 +483,28 @@ const EthiopianDateTimePicker: React.FC<EthiopianDateTimePickerProps> = ({
 
             {/* Year view */}
             {view === "year" && (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "0.5rem", overflowY: "auto" }}>
+              <div style={styles.yearGrid}>
+                <div style={{ gridColumn: "1 / -1", display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
+                  <button
+                    type="button"
+                    onClick={() => navigateYearPage(-1)}
+                    style={styles.headerButton}
+                    aria-label="Previous years"
+                  >
+                    ◀ Previous
+                  </button>
+                  <span style={{ fontSize: "12px", fontWeight: 600 }}>
+                    {yearRange[0]} - {yearRange[yearRange.length - 1]}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => navigateYearPage(1)}
+                    style={styles.headerButton}
+                    aria-label="Next years"
+                  >
+                    Next ▶
+                  </button>
+                </div>
                 {yearRange.map((y) => {
                   const isDisabled = isYearDisabled(y);
                   const isSelected = ethiopianDate.year === y;
@@ -464,72 +576,74 @@ const EthiopianDateTimePicker: React.FC<EthiopianDateTimePickerProps> = ({
             )}
           </div>
 
-          {/* Time picker */}
-          <div style={styles.timeSection}>
-            <div style={{ fontSize: "12px", fontWeight: 600, color: "#374151", textAlign: "center", marginBottom: "0.75rem" }}>Time</div>
-            <div style={{ display: "flex", gap: "0.75rem", justifyContent: "center" }}>
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                <label style={{ fontSize: "10px", color: "#6b7280", marginBottom: "0.5rem" }}>Hour</label>
-                <div style={{ width: 48, height: 192, overflowY: "auto", border: "1px solid #d1d5db", borderRadius: "0.5rem" }}>
-                  {hours.map((h) => (
-                    <div
-                      key={h}
-                      onClick={() => handleTimeChange("hour", ampm === "PM" ? (h % 12) + 12 : h % 12)}
-                      style={{
-                        ...styles.timeButton,
-                        ...((ethiopianDate.hour % 12 || 12) === h ? styles.selectedTimeButton : { backgroundColor: "white", color: "#374151" }),
-                      }}
-                    >
-                      {String(h).padStart(2, "0")}
-                    </div>
-                  ))}
+          {/* Time picker - conditionally rendered */}
+          {showTime && (
+            <div style={styles.timeSection}>
+              <div style={{ fontSize: "12px", fontWeight: 600, color: "#374151", textAlign: "center", marginBottom: "0.75rem" }}>Time</div>
+              <div style={{ display: "flex", gap: "0.75rem", justifyContent: "center" }}>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                  <label style={{ fontSize: "10px", color: "#6b7280", marginBottom: "0.5rem" }}>Hour</label>
+                  <div style={{ width: 48, height: 192, overflowY: "auto", border: "1px solid #d1d5db", borderRadius: "0.5rem" }}>
+                    {hours.map((h) => (
+                      <div
+                        key={h}
+                        onClick={() => handleTimeChange("hour", ampm === "PM" ? (h % 12) + 12 : h % 12)}
+                        style={{
+                          ...styles.timeButton,
+                          ...((ethiopianDate.hour % 12 || 12) === h ? styles.selectedTimeButton : { backgroundColor: "white", color: "#374151" }),
+                        }}
+                      >
+                        {String(h).padStart(2, "0")}
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
 
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                <label style={{ fontSize: "10px", color: "#6b7280", marginBottom: "0.5rem" }}>Minute</label>
-                <div style={{ width: 48, height: 192, overflowY: "auto", border: "1px solid #d1d5db", borderRadius: "0.5rem" }}>
-                  {minutes.map((m) => (
-                    <div
-                      key={m}
-                      onClick={() => handleTimeChange("minute", m)}
-                      style={{
-                        ...styles.timeButton,
-                        ...(ethiopianDate.minute === m ? styles.selectedTimeButton : { backgroundColor: "white", color: "#374151" }),
-                      }}
-                    >
-                      {String(m).padStart(2, "0")}
-                    </div>
-                  ))}
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                  <label style={{ fontSize: "10px", color: "#6b7280", marginBottom: "0.5rem" }}>Minute</label>
+                  <div style={{ width: 48, height: 192, overflowY: "auto", border: "1px solid #d1d5db", borderRadius: "0.5rem" }}>
+                    {minutes.map((m) => (
+                      <div
+                        key={m}
+                        onClick={() => handleTimeChange("minute", m)}
+                        style={{
+                          ...styles.timeButton,
+                          ...(ethiopianDate.minute === m ? styles.selectedTimeButton : { backgroundColor: "white", color: "#374151" }),
+                        }}
+                      >
+                        {String(m).padStart(2, "0")}
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
 
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                <label style={{ fontSize: "10px", color: "#6b7280", marginBottom: "0.5rem" }}>AM/PM</label>
-                <button
-                  type="button"
-                  onClick={() => toggleAMPM("AM")}
-                  style={{
-                    ...styles.timeButton,
-                    ...(ampm === "AM" ? styles.selectedTimeButton : { backgroundColor: "white", color: "#374151", border: "1px solid #d1d5db" }),
-                    marginBottom: "0.25rem"
-                  }}
-                >
-                  AM
-                </button>
-                <button
-                  type="button"
-                  onClick={() => toggleAMPM("PM")}
-                  style={{
-                    ...styles.timeButton,
-                    ...(ampm === "PM" ? styles.selectedTimeButton : { backgroundColor: "white", color: "#374151", border: "1px solid #d1d5db" })
-                  }}
-                >
-                  PM
-                </button>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                  <label style={{ fontSize: "10px", color: "#6b7280", marginBottom: "0.5rem" }}>AM/PM</label>
+                  <button
+                    type="button"
+                    onClick={() => toggleAMPM("AM")}
+                    style={{
+                      ...styles.timeButton,
+                      ...(ampm === "AM" ? styles.selectedTimeButton : { backgroundColor: "white", color: "#374151", border: "1px solid #d1d5db" }),
+                      marginBottom: "0.25rem"
+                    }}
+                  >
+                    AM
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => toggleAMPM("PM")}
+                    style={{
+                      ...styles.timeButton,
+                      ...(ampm === "PM" ? styles.selectedTimeButton : { backgroundColor: "white", color: "#374151", border: "1px solid #d1d5db" })
+                    }}
+                  >
+                    PM
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
       )}
     </div>

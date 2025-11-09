@@ -13,9 +13,20 @@
     "strict": true,
     "forceConsistentCasingInFileNames": true,
     "allowSyntheticDefaultImports": true,
-    "lib": ["ES2020", "DOM"],
-    "types": ["vitest"]
+    "lib": [
+      "ES2020",
+      "DOM"
+    ],
+    "types": [
+      "vitest"
+    ]
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "test"]
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "test"
+  ]
 }
