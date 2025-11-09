@@ -413,14 +413,6 @@ const EthiopianDateTimePicker: React.FC<EthiopianDateTimePickerProps> = ({
           <div style={styles.calendarSection}>
             {/* Header */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
-              <button
-                type="button"
-                onClick={() => navigateMonth(-1)}
-                style={styles.headerButton}
-                aria-label={view === "year" ? "Previous years" : "Previous month"}
-              >
-                ◀
-              </button>
 
               <div style={{ display: "flex", gap: "0.5rem" }}>
                 <button
@@ -441,14 +433,7 @@ const EthiopianDateTimePicker: React.FC<EthiopianDateTimePickerProps> = ({
                 </button>
               </div>
 
-              <button
-                type="button"
-                onClick={() => navigateMonth(1)}
-                style={styles.headerButton}
-                aria-label={view === "year" ? "Next years" : "Next month"}
-              >
-                ▶
-              </button>
+
             </div>
 
             {/* Month view */}
