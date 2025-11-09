@@ -413,6 +413,14 @@ const EthiopianDateTimePicker: React.FC<EthiopianDateTimePickerProps> = ({
           <div style={styles.calendarSection}>
             {/* Header */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+              <button
+                type="button"
+                onClick={() => navigateMonth(-1)}
+                style={styles.headerButton}
+                aria-label={view === "year" ? "Previous years" : "Previous month"}
+              >
+                ◀
+              </button>
 
               <div style={{ display: "flex", gap: "0.5rem" }}>
                 <button
@@ -433,7 +441,14 @@ const EthiopianDateTimePicker: React.FC<EthiopianDateTimePickerProps> = ({
                 </button>
               </div>
 
-
+              <button
+                type="button"
+                onClick={() => navigateMonth(1)}
+                style={styles.headerButton}
+                aria-label={view === "year" ? "Next years" : "Next month"}
+              >
+                ▶
+              </button>
             </div>
 
             {/* Month view */}
@@ -469,27 +484,7 @@ const EthiopianDateTimePicker: React.FC<EthiopianDateTimePickerProps> = ({
             {/* Year view */}
             {view === "year" && (
               <div style={styles.yearGrid}>
-                <div style={{ gridColumn: "1 / -1", display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
-                  <button
-                    type="button"
-                    onClick={() => navigateYearPage(-1)}
-                    style={styles.headerButton}
-                    aria-label="Previous years"
-                  >
-                    ◀ Previous
-                  </button>
-                  <span style={{ fontSize: "12px", fontWeight: 600 }}>
-                    {yearRange[0]} - {yearRange[yearRange.length - 1]}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => navigateYearPage(1)}
-                    style={styles.headerButton}
-                    aria-label="Next years"
-                  >
-                    Next ▶
-                  </button>
-                </div>
+
                 {yearRange.map((y) => {
                   const isDisabled = isYearDisabled(y);
                   const isSelected = ethiopianDate.year === y;
