@@ -258,7 +258,7 @@ const EthiopianDateTimePicker: React.FC<EthiopianDateTimePickerProps> = ({
       boxShadow: "0 10px 15px rgba(0,0,0,0.1)",
       display: "flex",
       width: showTime ? "440px" : "300px",
-      height: "380px",
+      padding: "0.25rem",
       overflow: "hidden",
       top: "100%",
       left: 0
